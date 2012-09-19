@@ -136,10 +136,10 @@ class phpsassHTMLResponsePlugin implements jIHTMLResponsePlugin {
                 'load_paths' => array(dirname($filePath)),
                 'filename' => array('dirname'=>dirname($filePath), 'basename'=>basename($filePath)),
                 'load_path_functions' => array(),//'sassy_load_callback'),
-                'functions' => sassy_get_functions(),
+                'functions' => $this->getSassphpFunctions(),
                 'callbacks' => array(
-                    'warn' => $watchdog ? 'watchdog_warn' : NULL,
-                    'debug' => $watchdog ? 'watchdog_debug' : NULL,
+                    'warn' => $watchdog ? array($this, 'watchdog_warn') : NULL,
+                    'debug' => $watchdog ? array($this, 'watchdog_debug') : NULL,
                 )
             );
             // Execute the compiler.
@@ -152,6 +152,46 @@ class phpsassHTMLResponsePlugin implements jIHTMLResponsePlugin {
         }
 
     }
+
+
+    /**
+     * Callback for @warn directive.
+     */
+    public function watchdog_warn($message, $context) {
+        _watchdog($message, $context, 'warn', E_USER_WARNING);
+    }
+
+    /**
+     * Callback for @debug directive.
+     */
+    public function watchdog_debug($message, $context) {
+        _watchdog($message, $context, 'debug', E_USER_NOTICE);
+    }
+
+    /**
+     * Handler for @warn/@debug directive callbacks.
+     */
+    private function _watchdog($message, $context, $level) {
+        $line = $context->node->token->line;
+        $filename = $context->node->token->filename;
+        $message = "Line $line of $filename : %message";
+        trigger_error( $message, $level );
+    }
+
+    /**
+     * Returns all functions to be used inside the parser.
+     */
+    private function getSassphpFunctions() {
+
+        //TODO : cache this
+        $functions = array( 'truc' => array($this, 'truc') );
+        return $functions;
+    }
+
+    public function truc() {
+        return new SassString('truc');
+    }
+
 
 
 
@@ -169,31 +209,6 @@ class phpsassHTMLResponsePlugin implements jIHTMLResponsePlugin {
     }
 }
 
-
-
-/**
- * Callback for @warn directive.
- */
-function watchdog_warn($message, $context) {
-  _watchdog($message, $context, 'warn', E_USER_WARNING);
-}
-
-/**
- * Callback for @debug directive.
- */
-function watchdog_debug($message, $context) {
-  _watchdog($message, $context, 'debug', E_USER_NOTICE);
-}
-
-/**
- * Handler for @warn/@debug directive callbacks.
- */
-function _watchdog($message, $context, $level) {
-    $line = $context->node->token->line;
-    $filename = $context->node->token->filename;
-    $message = "Line $line of $filename : %message";
-    trigger_error( $message, $level );
-}
 
 
 
