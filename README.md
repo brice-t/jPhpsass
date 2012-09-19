@@ -11,7 +11,10 @@ Installation
 ============
 
 Under Jelix default configuration, create an "htmlresponse" directory in your project's "plugins" directory.
-Clone this repository in that directory.
+Clone this repository in that directory with :
+
+    git clone --recursive git@github.com:brice-t/phpsass4jelix.git .
+
 
 Note that you should have your app plugin directory in your modulesPath (defaultconfig.ini.php or entry point's config.ini.php) to get it working.
 The value should be at least :
