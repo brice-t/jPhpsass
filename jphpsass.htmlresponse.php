@@ -14,132 +14,57 @@
 
 require_once 'phpsass/SassParser.php';
 
-define('PHPSASS_COMPILE_ALWAYS', 1 );
-define('PHPSASS_COMPILE_ONCHANGE', 2 ); //default value : jphpsass default behaviour
-define('PHPSASS_COMPILE_ONCE', 3 );
+class jphpsassHTMLResponsePlugin implements ICSSpreproPlugin {
 
-class jphpsassHTMLResponsePlugin implements jIHTMLResponsePlugin {
+    private $sassExtensions = array('sass', 'scss');
+    private $sassStyle = 'nested'; // nested (default), compact, compressed, or expanded
+    private $sassDebug = false;
+    private $sassWatchdog = false;
 
-    protected $response = null;
+    public function __construct( CSSpreproHTMLResponsePlugin $CSSpreproInstance ) {
 
-    public function __construct(jResponse $c) {
-        $this->response = $c;
-    }
-
-    /**
-     * called just before the jResponseBasicHtml::doAfterActions() call
-     */
-    public function afterAction() {
-    }
-
-    /**
-     * called when the content is generated, and potentially sent, except
-     * the body end tag and the html end tags. This method can output
-     * directly some contents.
-     */
-    public function beforeOutput() {
-        if (!($this->response instanceof jResponseHtml))
-            return;
         global $gJConfig;
 
-        $compileFlag = PHPSASS_COMPILE_ONCHANGE;
-        if( isset($gJConfig->jResponseHtml['phpsass_compile']) ) {
-            switch($gJConfig->jResponseHtml['phpsass_compile']) {
-            case 'always':
-                $compileFlag = PHPSASS_COMPILE_ALWAYS;
-                break;
-            case 'onchange':
-                $compileFlag = PHPSASS_COMPILE_ONCHANGE;
-                break;
-            case 'once':
-                $compileFlag = PHPSASS_COMPILE_ONCE;
-                break;
-            }
+        if( isset($gJConfig->jResponseHtml['CSSprepro_phpsass_extensions']) ) {
+            $extString = $gJConfig->jResponseHtml['CSSprepro_phpsass_extensions'];
+            $this->sassExtensions = array_map( 'trim', explode(',', $extString) );
         }
 
-        $sassExtensions = array('sass', 'scss');
-        if( isset($gJConfig->jResponseHtml['phpsass_extensions']) ) {
-            $extString = $gJConfig->jResponseHtml['phpsass_extensions'];
-            $sassExtensions = array_map( 'trim', explode(',', $extString) );
+        if( isset($gJConfig->jResponseHtml['CSSprepro_phpsass_style']) ) {
+            $this->sassStyle = $gJConfig->jResponseHtml['CSSprepro_phpsass_style'];
         }
-
-        $optionsArray = array( 
-                            'style' => 'nested', // nested (default), compact, compressed, or expanded
-                            'debug' => false,
-                            'watchdog' => false
-                        );
-        if( isset($gJConfig->jResponseHtml['phpsass_style']) ) {
-            $optionsArray['style'] = $gJConfig->jResponseHtml['phpsass_style'];
+        if( isset($gJConfig->jResponseHtml['CSSprepro_phpsass_debug']) ) {
+            $this->sassDebug = $gJConfig->jResponseHtml['CSSprepro_phpsass_debug'];
         }
-        if( isset($gJConfig->jResponseHtml['phpsass_debug']) ) {
-            $optionsArray['debug'] = $gJConfig->jResponseHtml['phpsass_debug'];
+        if( isset($gJConfig->jResponseHtml['CSSprepro_phpsass_watchdog']) ) {
+            $this->sassWatchdog = $gJConfig->jResponseHtml['CSSprepro_phpsass_watchdog'];
         }
-        if( isset($gJConfig->jResponseHtml['phpsass_watchdog']) ) {
-            $optionsArray['watchdog'] = $gJConfig->jResponseHtml['phpsass_watchdog'];
-        }
-
-        $inputCSSLinks = $this->response->getCSSLinks();
-        $outputCSSLinks = array();
-
-        foreach( $inputCSSLinks as $inputCSSLinkUrl=>$CSSLinkParams ) {
-            $CSSLinkUrl = $inputCSSLinkUrl;
-            if( in_array( pathinfo($inputCSSLinkUrl, PATHINFO_EXTENSION), $sassExtensions ) ||
-                (isset($CSSLinkParams['sass']) && $CSSLinkParams['sass']) ) {
-                    //we suppose url starts with basepath ...
-                    if( substr($CSSLinkUrl, 0, strlen($gJConfig->urlengine['basePath'])) != $gJConfig->urlengine['basePath'] ) {
-                        throw new Exception("File $CSSLinkUrl seems not to be located in your basePath : it can not be processed with phpsass");
-                    } else {
-                        $filePath = jApp::wwwPath() . substr($CSSLinkUrl, strlen($gJConfig->urlengine['basePath']));
-
-                        $outputSuffix = '.css';
-                        $outputPath = $filePath . $outputSuffix;
-
-                        try {
-                            $compile = true;
-                            if( is_file($outputPath) ) {
-                                if( ($compileFlag == PHPSASS_COMPILE_ALWAYS) ) {
-                                    unlink($outputPath);
-                                } elseif( ($compileFlag == PHPSASS_COMPILE_ONCE) ) {
-                                    $compile = false;
-                                }
-                                //PHPSASS_COMPILE_ONCHANGE is jphpsass's natural behaviour. So we let him do ...
-                            }
-                            if( $compile ) {
-                                $this->compileSass($filePath, $outputPath, $optionsArray);
-                            }
-                            $CSSLinkUrl = $CSSLinkUrl . $outputSuffix;
-                        } catch (exception $ex) {
-                            trigger_error("sass fatal error on file $filePath:<br />".$ex->getMessage(), E_USER_ERROR);
-                        }
-                    }
-                    unset($CSSLinkParams['sass']);
-            }
-
-            $outputCSSLinks[$CSSLinkUrl] = $CSSLinkParams;
-        }
-
-        $this->response->setCSSLinks( $outputCSSLinks );
     }
 
 
+    public function handles( $inputCSSLinkUrl, $CSSLinkParams ) {
+        if( in_array( pathinfo($inputCSSLinkUrl, PATHINFO_EXTENSION), $this->sassExtensions ) ||
+            (isset($CSSLinkParams['sass']) && $CSSLinkParams['sass']) ) {
+                return true;
+            }
+    }
 
-    private function compileSass( $filePath, $outputPath, $optionsArray ) {
-        extract ($optionsArray);
+    public function compile( $filePath, $outputPath ) {
 
         try {
             $options = array(
-                'style' => $style,
+                'style' => $this->sassStyle,
                 'cache' => FALSE,
                 'syntax' => pathinfo($filePath, PATHINFO_EXTENSION),
                 'debug' => FALSE,
-                'debug_info' => $debug,
+                'debug_info' => $this->sassDebug,
                 'load_paths' => array(dirname($filePath)),
                 'filename' => array('dirname'=>dirname($filePath), 'basename'=>basename($filePath)),
                 'load_path_functions' => array(),//'sassy_load_callback'),
                 'functions' => $this->getSassphpFunctions(),
                 'callbacks' => array(
-                    'warn' => $watchdog ? array($this, 'watchdog_warn') : NULL,
-                    'debug' => $watchdog ? array($this, 'watchdog_debug') : NULL,
+                    'warn' => $this->sassWatchdog ? array($this, 'watchdog_warn') : NULL,
+                    'debug' => $this->sassWatchdog ? array($this, 'watchdog_debug') : NULL,
                 )
             );
             // Execute the compiler.
@@ -150,7 +75,11 @@ class jphpsassHTMLResponsePlugin implements jIHTMLResponsePlugin {
         catch (Exception $e) {
             trigger_error( "Sass error for '$filePath' : " . $e->getMessage(), E_USER_ERROR );
         }
+    }
 
+
+    public function cleanCSSLinkParams( & $CSSLinkParams ) {
+        unset($CSSLinkParams['sass']);
     }
 
 
@@ -189,23 +118,7 @@ class jphpsassHTMLResponsePlugin implements jIHTMLResponsePlugin {
     }
 
     public function truc() {
-        return new SassString('truc');
-    }
-
-
-
-
-
-    /**
-     * called just before the output of an error page
-     */
-    public function atBottom() {
-    }
-
-    /**
-     * called just before the output of an error page
-     */
-    public function beforeOutputError() {
+        return new SassString('trucIsOk');
     }
 }
 
@@ -225,33 +138,6 @@ class jphpsassHTMLResponsePlugin implements jIHTMLResponsePlugin {
 
 
 
-
-
-/**
- * Returns all functions to be used inside the parser.
- * @author Joon Park (dvessel), richthegeek, fubhy
- */
-function sassy_get_functions() {
-    return array();
-  $functions =& drupal_static(__FUNCTION__);
-
-  if (!isset($function)) {
-    foreach (module_invoke_all('sassy_functions') as $info) {
-      $info = (object) $info;
-      $functions[$info->name] = $info->callback;
-    }
-    foreach (array_merge($GLOBALS['base_theme_info'], array($GLOBALS['theme_info'])) as $theme) {
-      $function = $theme->name . '_sassy_functions';
-      if (function_exists($function) && $data = $function()) {
-        foreach ($data as $info) {
-          $info = (object) $info;
-          $functions[$info->name] = $info->callback;
-        }
-      }
-    }
-  }
-  return $functions;
-}
 
 /**
  * Called from inside SassParser when a file is trying to be loaded.
