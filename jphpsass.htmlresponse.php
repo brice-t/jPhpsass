@@ -15,10 +15,10 @@
 require_once 'phpsass/SassParser.php';
 
 define('PHPSASS_COMPILE_ALWAYS', 1 );
-define('PHPSASS_COMPILE_ONCHANGE', 2 ); //default value : phpsass4jelix default behaviour
+define('PHPSASS_COMPILE_ONCHANGE', 2 ); //default value : jphpsass default behaviour
 define('PHPSASS_COMPILE_ONCE', 3 );
 
-class phpsassHTMLResponsePlugin implements jIHTMLResponsePlugin {
+class jphpsassHTMLResponsePlugin implements jIHTMLResponsePlugin {
 
     protected $response = null;
 
@@ -102,7 +102,7 @@ class phpsassHTMLResponsePlugin implements jIHTMLResponsePlugin {
                                 } elseif( ($compileFlag == PHPSASS_COMPILE_ONCE) ) {
                                     $compile = false;
                                 }
-                                //PHPSASS_COMPILE_ONCHANGE is phpsass4jelix's natural behaviour. So we let him do ...
+                                //PHPSASS_COMPILE_ONCHANGE is jphpsass's natural behaviour. So we let him do ...
                             }
                             if( $compile ) {
                                 $this->compileSass($filePath, $outputPath, $optionsArray);
