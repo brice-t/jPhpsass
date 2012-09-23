@@ -1,21 +1,19 @@
-What is phpsass4jelix ?
+What is jphpsass ?
 ==============================
 
 This project is a plugin for [Jelix](http://jelix.org) PHP framework. It allows you to use easily [Sass](http://sass-lang.com/) dynamic stylesheet language in Jelix (using [phpsass](http://phpsass.com/) compiler).
 
-This is an htmlresponse plugin.
+This is a plugin of CSSprepro which is itself an htmlresponse plugin for Jelix.
 
 
 
 Installation
 ============
 
-Under Jelix default configuration, create an "htmlresponse" directory in your project's "plugins" directory.
-Checkout this repository in that directory with :
+Under Jelix default configuration, create (if missing) a "CSSprepro" directory in your project's "plugins" directory.
+Clone this repository in that directory with :
 
-    git clone --depth 1 --branch master --recursive git@github.com:brice-t/phpsass4jelix.git
-    mv phpsass4jelix/phpsass .
-    rm -rf phpsass4jelix
+    git clone --recursive git@github.com:brice-t/jphpsass.git
 
 
 Note that you should have your app plugin directory in your modulesPath (defaultconfig.ini.php or entry point's config.ini.php) to get it working.
@@ -30,7 +28,7 @@ Usage
 
 When including a CSS file (e.g. with addCSSLink()) you should set 'sass'=>true as a param.
 
-Another way of having a file compiled with Sass is including as file with .scss or .sass extension. You can set expected extensions in the comma-separated value of _phpsass\_extensions_ under the _jResponseHtml_ section.
+Another way of having a file compiled with Sass is including as file with .scss or .sass extension. You can set expected extensions in the comma-separated value of _CSSprepro\_phpsass\_extensions_ under the _jResponseHtml_ section.
 
 E.g. in your response :
 
@@ -41,10 +39,10 @@ or
 `$this->addCSSLink($gJConfig->urlengine['basePath'].'themes/'.$gJConfig->theme.'/Css/style.sassFile', array( 'sass' => true ));`
 
 
-Your config file must activate phpsass plugin :
+Your config file must activate jphpsass plugin :
 
     [jResponseHtml]
-    plugins=phpsass
+    plugins=jphpsass
 
 N.B. : the directories containing Sass files should be writable by your web server ! Indeed, compiled files will be written in that very same directory so that relative urls go on working ...
 
@@ -54,14 +52,14 @@ N.B. : the directories containing Sass files should be writable by your web serv
 Config
 ======
 
-You can configure phpsass's behviour regarding compilation:
+You can configure jphpsass's behviour regarding compilation:
 
     [jResponseHtml]
     ;...
     ; always|onchange|once
-    phpsass_compile=always
+    CSSprepro_phpsass_compile=always
 
-If phpsass\_compile's value is not valid or empty, its default value is onchange.
+If CSSprepro\_phpsass\_compile's value is not valid or empty, its default value is onchange.
 
 * always : compile Sass file on all requests
 * onchange : compile Sass file only if it has changed
