@@ -14,7 +14,7 @@
 
 require_once 'phpsass/SassParser.php';
 
-class jphpsassHTMLResponsePlugin implements ICSSpreproPlugin {
+class jphpsassCSSpreproPlugin implements ICSSpreproPlugin {
 
     private $sassExtensions = array('sass', 'scss');
     private $sassStyle = 'nested'; // nested (default), compact, compressed, or expanded
