@@ -20,24 +20,36 @@ class jPhpsassCSSpreproPlugin implements ICSSpreproPlugin {
     private $sassStyle = 'nested'; // nested (default), compact, compressed, or expanded
     private $sassDebug = false;
     private $sassWatchdog = false;
+    private $subPlugins = array();
 
     public function __construct( CSSpreproHTMLResponsePlugin $CSSpreproInstance ) {
 
         global $gJConfig;
 
-        if( isset($gJConfig->jResponseHtml['CSSprepro_phpsass_extensions']) ) {
-            $extString = $gJConfig->jResponseHtml['CSSprepro_phpsass_extensions'];
+        if( isset($gJConfig->jResponseHtml['CSSprepro_jPhpsass_extensions']) ) {
+            $extString = $gJConfig->jResponseHtml['CSSprepro_jPhpsass_extensions'];
             $this->sassExtensions = array_map( 'trim', explode(',', $extString) );
         }
 
-        if( isset($gJConfig->jResponseHtml['CSSprepro_phpsass_style']) ) {
-            $this->sassStyle = $gJConfig->jResponseHtml['CSSprepro_phpsass_style'];
+        if( isset($gJConfig->jResponseHtml['CSSprepro_jPhpsass_style']) ) {
+            $this->sassStyle = $gJConfig->jResponseHtml['CSSprepro_jPhpsass_style'];
         }
-        if( isset($gJConfig->jResponseHtml['CSSprepro_phpsass_debug']) ) {
-            $this->sassDebug = $gJConfig->jResponseHtml['CSSprepro_phpsass_debug'];
+        if( isset($gJConfig->jResponseHtml['CSSprepro_jPhpsass_debug']) ) {
+            $this->sassDebug = $gJConfig->jResponseHtml['CSSprepro_jPhpsass_debug'];
         }
-        if( isset($gJConfig->jResponseHtml['CSSprepro_phpsass_watchdog']) ) {
-            $this->sassWatchdog = $gJConfig->jResponseHtml['CSSprepro_phpsass_watchdog'];
+        if( isset($gJConfig->jResponseHtml['CSSprepro_jPhpsass_watchdog']) ) {
+            $this->sassWatchdog = $gJConfig->jResponseHtml['CSSprepro_jPhpsass_watchdog'];
+        }
+        if( isset($gJConfig->jResponseHtml['CSSprepro_jPhpsass_plugins']) ) {
+            $subPluginNames = $gJConfig->jResponseHtml['CSSprepro_jPhpsass_plugins'];
+            foreach( $subPluginNames as $subPluginName ) {
+                $subPlugin = jApp::loadPlugin($subPluginName, 'jPhpsass', '.jPhpsass.php', $subPluginName.'CSSpreproPlugin', $this);
+                if( $subPlugin ) {
+                    $this->subPlugins[$subPluginName] = $subPlugin;
+                } else {
+                    trigger_error( "jPhpsass plugin could not find sub-plugin '$subPluginName'", E_USER_ERROR );
+                }
+            }
         }
     }
 
