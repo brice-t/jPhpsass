@@ -13,6 +13,7 @@
 */
 
 require_once 'phpsass/SassParser.php';
+require_once 'IjPhpsassPlugin.class.php';
 
 class jPhpsassCSSpreproPlugin implements ICSSpreproPlugin {
 
@@ -43,7 +44,8 @@ class jPhpsassCSSpreproPlugin implements ICSSpreproPlugin {
         if( isset($gJConfig->jResponseHtml['CSSprepro_jPhpsass_plugins']) ) {
             $subPluginNames = $gJConfig->jResponseHtml['CSSprepro_jPhpsass_plugins'];
             foreach( $subPluginNames as $subPluginName ) {
-                $subPlugin = jApp::loadPlugin($subPluginName, 'jPhpsass', '.jPhpsass.php', $subPluginName.'CSSpreproPlugin', $this);
+                $subPlugin = jApp::loadPlugin('jPhpsass_'.$subPluginName, 'CSSprepro',
+                    '.jPhpsass.php', 'jPhpsassPlugin_'.$subPluginName, $this);
                 if( $subPlugin ) {
                     $this->subPlugins[$subPluginName] = $subPlugin;
                 } else {
