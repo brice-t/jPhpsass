@@ -153,10 +153,8 @@ class jPhpsassCSSpreproPlugin implements ICSSpreproPlugin {
         $namespace = preg_replace('/[^0-9a-z]+/', '_', strtolower(array_shift($file)));
         # check for implementing modules specific to namespace and invoke looking for a paths array.
         if( array_key_exists($namespace, $this->subPlugins) ) {
-            jLog::dump( $file );
             $paths = $this->subPlugins[$namespace]->resolvePath( $file[0] );
             if( $paths ) {
-                jLog::dump( $paths );
                 return (array) $paths;
             }
         }
