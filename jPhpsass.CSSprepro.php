@@ -25,7 +25,7 @@ class jPhpsassCSSpreproPlugin implements ICSSpreproPlugin {
 
     public function __construct( CSSpreproHTMLResponsePlugin $CSSpreproInstance ) {
 
-        global $gJConfig;
+        $gJConfig = jApp::config();
 
         if( isset($gJConfig->jResponseHtml['CSSprepro_jPhpsass_extensions']) ) {
             $extString = $gJConfig->jResponseHtml['CSSprepro_jPhpsass_extensions'];
@@ -74,7 +74,7 @@ class jPhpsassCSSpreproPlugin implements ICSSpreproPlugin {
                 'debug_info' => $this->sassDebug,
                 'load_paths' => array(dirname($filePath)),
                 'filename' => array('dirname'=>dirname($filePath), 'basename'=>basename($filePath)),
-                'load_path_functions' => array(),//'sassy_load_callback'),
+                'load_path_functions' => array( array($this, 'sassy_load_callback') ),//'sassy_load_callback'),
                 'functions' => $this->getSassphpFunctions(),
                 'callbacks' => array(
                     'warn' => $this->sassWatchdog ? array($this, 'watchdog_warn') : NULL,
@@ -127,13 +127,43 @@ class jPhpsassCSSpreproPlugin implements ICSSpreproPlugin {
     private function getSassphpFunctions() {
 
         //TODO : cache this
-        $functions = array( 'truc' => array($this, 'truc') );
+
+        $functions = array();
+
+        foreach( $this->subPlugins as $subPlugin ) {
+            $functions = array_merge( $functions, $subPlugin->getPhpsassFunctions() );
+        }
+
         return $functions;
     }
 
-    public function truc() {
-        return new SassString('trucIsOk');
+
+    /**
+     * Called from inside SassParser when a file is trying to be loaded.
+     *
+     * @param $file
+     *    The file trying to be loaded, eg 'myfile/bla.scss'
+     *
+     * @return
+     *    An array of 0 - n filenames to load.
+     *    If no valid files are found return array() or FALSE
+     */
+    public function sassy_load_callback($file) {
+        $file = explode('/', $file, 2);
+        $namespace = preg_replace('/[^0-9a-z]+/', '_', strtolower(array_shift($file)));
+        # check for implementing modules specific to namespace and invoke looking for a paths array.
+        if( array_key_exists($namespace, $this->subPlugins) ) {
+            jLog::dump( $file );
+            $paths = $this->subPlugins[$namespace]->resolvePath( $file[0] );
+            if( $paths ) {
+                jLog::dump( $paths );
+                return (array) $paths;
+            }
+        }
+        return FALSE;
     }
+
+
 }
 
 
