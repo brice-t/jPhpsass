@@ -73,7 +73,7 @@ class jPhpsassCSSpreproPlugin implements ICSSpreproPlugin {
                 'debug' => FALSE,
                 'debug_info' => $this->sassDebug,
                 'load_paths' => array(dirname($filePath)),
-                'filename' => array('dirname'=>dirname($filePath), 'basename'=>basename($filePath)),
+                'filename' => $filePath,
                 'load_path_functions' => array( array($this, 'sassy_load_callback') ),//'sassy_load_callback'),
                 'functions' => $this->getSassphpFunctions(),
                 'callbacks' => array(
